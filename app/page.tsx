@@ -1,65 +1,76 @@
 import Image from "next/image";
 
-export default function Home() {
+async function getBearerToken(clientId, clientSecret) {
+  const AUTH_URL = "https://oauth.battle.net/token";
+
+  const credentials = `${clientId}:${clientSecret}`;
+  const encodedCredentials = Buffer.from(credentials).toString("base64");
+  const body = new URLSearchParams();
+  body.append("grant_type", "client_credentials");
+
+  const response = await fetch(AUTH_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${encodedCredentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: body,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Token auth failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
+async function getCardList(token) {
+  const API_URL = process.env.API_URL;
+  const requestHeaders = {
+    Authorization: `Bearer ${token}`,
+  };
+  const response = await fetch(API_URL, {
+    method: "GET",
+    headers: requestHeaders,
+  });
+
+  if (!response.ok) {
+    throw new Error(`getCardList failed: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+export default async function Home() {
+  const [clientId, clientSecret] = [
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+  ];
+  const accessToken = await getBearerToken(clientId, clientSecret);
+
+  const cardList = await getCardList(accessToken);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+    <div>
+      <span>"/"를 눌러 검색하기</span>
+      <ol>
+        {cardList.cards.map((card, ind) => (
+          <li key={ind} className="flex items-center">
             <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+              width={100}
+              height={100}
+              alt={"이미지"}
+              src={card.image.ko_KR}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+            <div>
+              <h3 className="text-[24px] font-bold">{card.name.ko_KR}</h3>
+              <p dangerouslySetInnerHTML={{ __html: card.text.ko_KR }} />
+            </div>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
