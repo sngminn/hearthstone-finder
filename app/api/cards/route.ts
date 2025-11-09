@@ -1,4 +1,6 @@
-export async function getBearerToken() {
+import { CardList } from "@/app/types/card";
+
+export async function getBearerToken(): Promise<string> {
   const AUTH_URL = "https://oauth.battle.net/token";
   const [clientId, clientSecret] = [
     process.env.CLIENT_ID,
@@ -27,7 +29,10 @@ export async function getBearerToken() {
   return data.access_token;
 }
 
-export async function getCardList(token, textFilter: string) {
+export async function getCardList(
+  token: string,
+  textFilter: string | null
+): Promise<CardList> {
   const API_URL = process.env.API_URL;
   const requestHeaders = {
     Authorization: `Bearer ${token}`,

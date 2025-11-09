@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { Card, CardList } from "../types/card";
 
-function LoadingSpinner({ className }) {
+type SearchStatus = "idle" | "loading" | "success" | "error";
+
+function LoadingSpinner({ className }: { className?: string }) {
   return (
     <div role="status" className={className}>
       <svg
@@ -27,23 +30,36 @@ function LoadingSpinner({ className }) {
   );
 }
 
-function SearchBar({ status, cardList, inputRef, setTextFilter }) {
+function SearchBar({
+  status,
+  cardList,
+  inputRef,
+  setTextFilter,
+}: {
+  status: SearchStatus;
+  cardList: CardList | null;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  setTextFilter: (value: string) => void;
+}) {
   return (
-    <div className="flex sticky mb-[48px]">
-      <input
-        placeholder="'/'를 눌러 검색하기"
-        className="w-full h-[64px] bg-gray-900 px-[28px] rounded-[12px] focus:outline-0 focus:bg-gray-800"
-        onChange={(e) => setTextFilter(e.target.value)}
-        ref={inputRef}
-      />
-      {status === "loading" && cardList && (
-        <LoadingSpinner className="absolute right-[24px] top-[50%] translate-y-[-50%]" />
-      )}
+    <div className="w-full h-[80px] items-center justify-center sticky mb-[48px] top-0">
+      <div className="absolute w-full top-0 h-[180px] bg-linear-to-b from-[#0c0f18] to-[#0c0f1800]" />
+      <div className="absolute top-[24px] w-full">
+        <input
+          placeholder="'/'를 눌러 카드 검색하기"
+          className="w-full h-[64px] bg-[#39baff0c] hover:bg-[#39baff12] backdrop-blur-xl px-[28px] rounded-[12px] focus:outline-[1px] focus:outline-[#39baff25] focus:bg-[#39baff11]"
+          onChange={(e) => setTextFilter(e.target.value)}
+          ref={inputRef}
+        />
+        {status === "loading" && cardList && (
+          <LoadingSpinner className="absolute right-[24px] top-[50%] translate-y-[-50%]" />
+        )}
+      </div>
     </div>
   );
 }
 
-function CardItem({ card }) {
+function CardItem({ card }: { card: Card }) {
   return (
     <li className="flex items-center gap-[12px] pl-[12px] pr-[24px] rounded-[12px] hover:bg-[#ffffff05] cursor-pointer">
       <Image width={100} height={100} alt={"이미지"} src={card.image} />
@@ -63,7 +79,7 @@ function CardItem({ card }) {
   );
 }
 
-function useDebounce(value, delay) {
+function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -79,10 +95,10 @@ function useDebounce(value, delay) {
 }
 
 export function SearchContainer() {
-  const [cardList, setCardList] = useState(null);
-  const [status, setStatus] = useState("idle");
+  const [cardList, setCardList] = useState<CardList | null>(null);
+  const [status, setStatus] = useState<SearchStatus>("idle");
   const [textFilter, setTextFilter] = useState("");
-  const inputRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const debouncedText = useDebounce(textFilter, 200);
 
   useEffect(() => {
